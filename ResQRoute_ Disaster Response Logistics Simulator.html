@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ResQRoute: Disaster Response Logistics Simulator</title>
+<style>
+:root{--bg:#FFF1E8;--soft:#FFE0D2;--ac:#F47C5A;--tx:#292929;--card:#fff;--bd:#E8DCD5;--mu:#7a6a62;--ok:#2f9e44;--bad:#d64545;--pend:#f2b705;--sh:#2b7de9;--pa:#8b3fd9;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1e1612;--soft:#3a2820;--tx:#f6e9e0;--card:#2a1e18;--bd:#4d392f;--mu:#c3a898}}
+:root[data-theme="dark"]{--bg:#1e1612;--soft:#3a2820;--tx:#f6e9e0;--card:#2a1e18;--bd:#4d392f;--mu:#c3a898}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 "Avenir Next","Segoe UI",system-ui,sans-serif}
+button,select{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:7px 12px;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+button.pri,button.on{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:700}
+.hero{background:linear-gradient(160deg,var(--soft),var(--bg));padding:20px 20px 36px;border-bottom:1px solid var(--bd)}
+.brand{font-weight:800;font-size:18px;color:var(--ac)}
+.hgrid{max-width:1180px;margin:18px auto 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;align-items:center}
+h1{font:800 clamp(34px,6vw,60px)/1.02 "Trebuchet MS","Avenir Next",sans-serif;margin:0 0 12px;letter-spacing:-.02em}
+.hero p{max-width:56ch;margin:0 0 16px;font-size:16px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.stats span{background:var(--card);border:1px solid var(--bd);border-radius:999px;padding:4px 12px;font-weight:600}
+#heroMap svg,.map svg{width:100%;height:auto;display:block;background:var(--card);border:1px solid var(--bd);border-radius:16px}
+main{max-width:1180px;margin:0 auto;padding:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px;margin-bottom:12px}
+.card h3{margin:0 0 8px;font-size:15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;align-items:start}
+.maps{display:flex;gap:10px;flex-wrap:wrap}.map{flex:1 1 420px;min-width:0}.map b{display:block;margin:0 0 4px}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px}
+.kpi div{background:var(--soft);border-radius:10px;padding:6px 8px}.kpi small{display:block;color:var(--mu)}.kpi strong{font-size:17px}
+.bar{height:8px;background:var(--soft);border-radius:6px;overflow:hidden;margin:3px 0 6px}.bar i{display:block;height:100%;background:var(--ac)}
+label{display:flex;justify-content:space-between;gap:8px;margin:5px 0;color:var(--mu)}label b{color:var(--tx)}input[type=range]{width:100%;accent-color:var(--ac)}
+table{width:100%;border-collapse:collapse}td,th{padding:4px 6px;border-bottom:1px solid var(--bd);text-align:left}
+.log{max-height:190px;overflow:auto;font-size:13px}.log div{padding:3px 0;border-bottom:1px dashed var(--bd)}
+.key{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--mu)}.key i{display:inline-block;width:18px;height:0;border-top:4px solid;vertical-align:middle;margin-right:4px}
+.note{color:var(--mu);font-size:12px}.pill{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--soft);font-size:12px}
+dialog{max-width:640px;border:1px solid var(--bd);border-radius:16px;background:var(--card);color:var(--tx)}dialog li{margin:6px 0}
+.e-open{stroke:#b9a99e}.e-congested{stroke:#e8a317}.e-flooded{stroke:#3b82c4}.e-blocked{stroke:var(--bad);stroke-dasharray:6 6}
+svg text{font-family:inherit;fill:var(--tx)}
+</style></head><body>
+
+<header class="hero"><div class="brand">🚚 ResQRoute</div>
+<div class="hgrid"><div>
+<h1>Delivering Hope.<br>Prioritizing Lives.</h1>
+<p>An intelligent disaster-response simulator that allocates emergency resources and prioritizes deliveries based on urgency, deadlines, road priority, and uncertain travel conditions.</p>
+<div class="row"><button class="pri" id="goSim">Run Simulation</button><button id="goCmp">Compare Before &amp; After</button><button id="explainBtn">Explain This Simulation</button></div>
+<div class="row stats" id="stats" style="margin-top:14px"></div></div>
+<div id="heroMap"></div></div></header>
+
+<main id="sim">
+<div class="card"><div class="row">
+<button id="mLab" class="on">Route Lab</button><button id="mSim">Simulation</button><button id="mCmp">Compare</button>
+<span style="flex:1"></span>
+<button class="pri" id="bRun">Run Simulation</button><button id="bPause">Pause</button><button id="bResume">Resume</button><button id="bReset">Reset</button><button class="pri" id="bCmp">Run Comparison</button><button id="bGen">Generate Disaster Scenario</button></div>
+<div class="row" style="margin-top:8px"><label style="margin:0">Scenario&nbsp;<select id="preset"><option value="sample">Sample</option><option value="flood">Flood</option><option value="quake">Earthquake</option><option value="cyclone">Cyclone</option></select></label>
+<label style="margin:0"><input type="checkbox" id="mst">&nbsp;Show MST Backbone</label>
+<span class="key"><span><i style="border-color:#b9a99e"></i>Open</span><span><i style="border-color:#e8a317"></i>Congested</span><span><i style="border-color:#3b82c4"></i>Flooded</span><span><i style="border-color:var(--bad);border-top-style:dashed"></i>Blocked</span><span><i style="border-color:#f5a524"></i>Emergency corridor</span><span><i style="border-color:#333;border-top-style:dotted"></i>MST</span><span><i style="border-color:var(--sh)"></i>Shortest</span><span><i style="border-color:var(--pa)"></i>Priority-aware</span></span></div></div>
+
+<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
+<div style="grid-column:span 2;min-width:0"><div class="maps" id="maps"></div>
+<div class="card" style="margin-top:12px"><h3>Click a road or place for details (set road conditions here)</h3><div id="detail" class="note">Nothing selected.</div></div></div>
+<div><div class="card"><h3>Settings</h3>
+<label>Vehicles <b id="o_veh"></b></label><input type="range" data-k="veh" min="2" max="6">
+<label>Food inventory % <b id="o_f"></b></label><input type="range" data-k="f" min="30" max="150" step="10">
+<label>Water inventory % <b id="o_w"></b></label><input type="range" data-k="w" min="30" max="150" step="10">
+<label>Medical-kit inventory % <b id="o_m"></b></label><input type="range" data-k="m" min="30" max="150" step="10">
+<label>Demand level % <b id="o_dem"></b></label><input type="range" data-k="dem" min="50" max="150" step="10">
+<label>Travel-time uncertainty <b id="o_sig"></b></label><input type="range" data-k="sig" min="0" max="0.6" step="0.05">
+<label>Random road closures <b id="o_clo"></b></label><input type="range" data-k="clo" min="0" max="4">
+<label>Vehicle capacity (DP) <b id="o_cap"></b></label><input type="range" data-k="cap" min="60" max="200" step="10">
+<div class="note">Everything here is simulated with a fixed random seed. It is a teaching model, not a real-world emergency prediction.</div></div></div></div>
+
+<div class="card"><h3>Route Lab: Shortest Path vs Priority-Aware Path</h3>
+<div class="row"><label style="margin:0">From&nbsp;<select id="lFrom"><option value="A">Depot A</option><option value="B">Depot B</option></select></label>
+<label style="margin:0">To&nbsp;<select id="lTo"></select></label>
+<button id="lSh">Shortest Path</button><button id="lPa" class="on">Priority-Aware Path</button></div>
+<table style="margin-top:8px"><thead><tr><th></th><th>Roads</th><th>Distance</th><th>Time</th><th>Corridor share</th><th>Arrival / deadline</th></tr></thead><tbody id="labT"></tbody></table>
+<p id="labX" style="margin:8px 0 0"></p>
+<p class="note">Rule: score = time × (1 + σ × share of congested/flooded time) × (1 − 0.15 × urgency × corridor share). Urgency: Critical 3, High 2, Medium 1, Low 0. Routes with a blocked road or an arrival after the deadline are discarded first. The lowest score wins.</p></div>
+
+<div class="grid" id="res"></div>
+<div class="card"><h3>Decision log</h3><div class="log" id="log"></div></div>
+
+<div class="grid">
+<div class="card"><h3>DP demo: which deliveries fit one vehicle? (0/1 knapsack)</h3><div id="dp"></div></div>
+<div class="card"><h3>MST backbone (Kruskal)</h3><div id="mstI"></div>
+<p class="note">MST connects the selected network nodes using a minimum-total-weight set of roads without creating cycles. It is only a backbone: delivery routes still follow road status, deadlines and priorities.</p></div>
+<div class="card"><h3>Algorithms used</h3><ul style="margin:0;padding-left:18px"><li>Graph: places = nodes, roads = edges</li><li>Kruskal MST: backbone</li><li>Path enumeration + Dijkstra-style least cost: baseline and shortest route</li><li>Scoring rule: priority-aware route</li><li>Greedy: critical, then high, then deadline, then unmet demand</li><li>Multi-depot split allocation</li><li>0/1 knapsack DP: local delivery planning</li><li>Seeded lognormal noise: uncertain travel times</li></ul></div></div>
+</main>
+
+<dialog id="ex"><h3>Explain This Simulation</h3><ol>
+<li>The map is a road network after a disaster.</li>
+<li>Nodes are places (depots, hospital, camps, shelters). Edges are roads with distance, time, priority and condition.</li>
+<li>MST (Kruskal) picks the cheapest set of roads that connects everything with no cycles: a basic backbone.</li>
+<li>Greedy prioritization serves critical places first, then high, then medium, using deadlines to break ties.</li>
+<li>Multi-depot allocation: if one depot runs out of a resource, the next depot covers the rest. Stock never goes below zero.</li>
+<li>The shortest path only minimizes time. The priority-aware route can pick a slightly longer emergency corridor when the destination is urgent and the deadline is still met.</li>
+<li>The DP step chooses which deliveries fit into one vehicle's capacity with the highest urgency value.</li>
+<li>Uncertainty adds random delays to every road. Higher uncertainty means more late deliveries.</li>
+<li>Before = nearest-first, nearest-depot, shortest-path policy. After = ResQRoute. Both use the same map, stock, demand and delays, and all numbers are computed live.</li></ol>
+<button class="pri" onclick="ex.close()">Close</button></dialog>
+
+<script>
+/* ===================== DATA ===================== */
+const $=id=>document.getElementById(id), PRN=['Low','Medium','High','Critical'];
+const FACT={open:1,congested:1.5,flooded:2,blocked:Infinity};
+const ICON={dep:'🏭',hos:'🏥',camp:'⛺',sch:'🏠',vil:'🏘️'};
+const N={ // x,y for drawing; pr = urgency 0..3; dem = f(ood) w(ater) m(edical); dl = deadline minutes
+ A:{n:'Depot A',t:'dep',x:90,y:240,stock:{f:100,w:120,m:30}}, B:{n:'Depot B',t:'dep',x:650,y:370,stock:{f:80,w:100,m:50}},
+ H:{n:'Hospital',t:'hos',x:380,y:70,pr:3,dem:{m:40},dl:15}, C:{n:'Relief Camp',t:'camp',x:620,y:150,pr:2,dem:{f:60,w:80},dl:25},
+ S:{n:'School Shelter',t:'sch',x:440,y:390,pr:1,dem:{f:40,w:50},dl:30}, K:{n:'Clinic',t:'hos',x:230,y:390,pr:2,dem:{m:20,w:20},dl:28},
+ V:{n:'Village',t:'vil',x:700,y:250,pr:0,dem:{f:30,w:30},dl:40}, J1:{n:'Junction 1',t:'j',x:180,y:110}, J2:{n:'Junction 2',t:'j',x:380,y:240}};
+const E=[['AH','A','H',2,4,0],['AJ1','A','J1',2.5,3.5,1],['J1H','J1','H',2.5,3.5,1],['AJ2','A','J2',3,5,0],['J1J2','J1','J2',2,3,0],['J2C','J2','C',3,4,0],
+ ['BJ2','B','J2',3,4,0],['BC','B','C',4,6,0],['BS','B','S',3,5,0],['J2S','J2','S',2,3,0],['SK','S','K',3,4,0],['KA','K','A',3,5,0],['KH','K','H',4,6,0],
+ ['HC','H','C',4,5,1],['CV','C','V',2,3,0],['BV','B','V',2,3,0],['BH','B','H',6,9,1]].map(([id,a,b,km,min,c])=>({id,a,b,km,min,corr:!!c}));
+const PRESET={sample:{},flood:{J2C:'flooded',AJ2:'congested',BS:'congested'},quake:{KH:'blocked',J1J2:'blocked',AJ2:'congested'},cyclone:{BS:'flooded',BH:'congested',BJ2:'flooded'}};
+const DEF={preset:'sample',seed:7,manual:{},veh:4,f:100,w:100,m:100,dem:100,sig:.2,clo:0,cap:150,mode:'lab',mst:false,sel:null,from:'A',to:'H',pol:'P'};
+let S={...DEF,manual:{}}, CLOSED=new Set(), Z={}, RES={}, END=1, T=0, play=false, PC={};
+const ename=e=>e.id==='AH'?'Road A':(e.id==='AJ1'||e.id==='J1H')?'Road B':'Road '+e.id;
+const cond=e=>S.manual[e.id]||(CLOSED.has(e.id)?'blocked':PRESET[S.preset][e.id])||'open';
+const eT=e=>e.min*FACT[cond(e)];
+const DEPOTS=['A','B'], DESTS=Object.keys(N).filter(k=>N[k].dem);
+
+/* ===================== RANDOM ===================== */
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const gauss=r=>Math.sqrt(-2*Math.log(r()+1e-9))*Math.cos(6.2832*r());
+function reseed(){const r=rng(S.seed*31+5),ids=E.map(e=>e.id).sort(()=>r()-.5);CLOSED=new Set(ids.slice(0,S.clo));E.forEach((e,i)=>Z[e.id]=gauss(rng(S.seed+i*17)));}
+
+/* ===================== ROUTING ===================== */
+function allPaths(f,t){const k=f+t;if(PC[k])return PC[k];const out=[];
+ (function dfs(u,seen,acc){if(u===t){out.push(acc);return}if(acc.length>=6)return;
+  for(const e of E){const v=e.a===u?e.b:e.b===u?e.a:null;if(v&&!seen.has(v)){seen.add(v);dfs(v,seen,[...acc,{e,from:u,to:v}]);seen.delete(v);}}})(f,new Set([f]),[]);
+ return PC[k]=out;}
+const pkey=p=>p.map(s=>s.e.id).join();
+function bestPath(f,t,cost){if(f===t)return[];let b=null,bc=Infinity;           // least-cost path over all simple paths (Dijkstra-equivalent on this small graph)
+ for(const p of allPaths(f,t)){const c=p.reduce((a,s)=>a+cost(s.e),0);if(c<bc-1e-9||(Math.abs(c-bc)<1e-9&&b&&pkey(p)<pkey(b))){bc=c;b=p}}return b;}
+function info(p,pr){let T=0,km=0,cT=0,rT=0;p.forEach(s=>{const t=eT(s.e);T+=t;km+=s.e.km;if(s.e.corr)cT+=t;if(cond(s.e)!=='open')rT+=t});
+ const c=T?cT/T:0,r=T?rT/T:0;return{p,T,km,c,key:pkey(p),sc:T*(1+S.sig*r)*(1-.15*pr*c)};}
+/* picks shortest route and priority-aware route (deterministic: score, then time, then road ids) */
+function pick(f,t,t0,dl,pr){const all=allPaths(f,t).map(p=>info(p,pr)).filter(i=>isFinite(i.T));if(!all.length)return null;
+ const sh=[...all].sort((a,b)=>a.T-b.T||a.km-b.km||a.key.localeCompare(b.key))[0];
+ const feas=all.filter(i=>t0+i.T<=dl),pool=feas.length?feas:[sh];
+ const pa=[...pool].sort((a,b)=>a.sc-b.sc||a.T-b.T||a.key.localeCompare(b.key))[0];return{sh,pa,feasible:feas.length>0};}
+/* walks a route with realised (noisy) times; the baseline pays 8 min and replans when it meets a blocked road */
+function realize(steps,t0,dest,baseline){let t=t0,legs=[],rep=false,q=[...steps];
+ while(q.length){const s=q.shift();
+  if(cond(s.e)==='blocked'){if(!baseline)return{legs,arrive:Infinity,rep};legs.push({a:s.from,b:s.from,t0:t,t1:t+8});t+=8;rep=true;
+   const alt=bestPath(s.from,dest,e=>cond(e)==='blocked'?Infinity:e.min);if(!alt||!alt.length)return{legs,arrive:Infinity,rep};q=[...alt];continue;}
+  const d=eT(s.e)*Math.exp(S.sig*Z[s.e.id]-S.sig*S.sig/2);legs.push({a:s.from,b:s.to,t0:t,t1:t+d});t+=d;}
+ return{legs,arrive:t,rep};}
+
+/* ===================== ALLOCATION + DISPATCH ===================== */
+function simulate(pol){const Q=pol==='R',log=[],sc={f:S.f/100,w:S.w/100,m:S.m/100};
+ const stock={},stock0={};DEPOTS.forEach(d=>{stock[d]={};stock0[d]={};'fwm'.split('').forEach(r=>{stock[d][r]=stock0[d][r]=Math.round(N[d].stock[r]*sc[r])})});
+ const dests=DESTS.map(k=>{const need={};'fwm'.split('').forEach(r=>need[r]=Math.round((N[k].dem[r]||0)*S.dem/100));return{k,pr:N[k].pr,dl:N[k].dl,need,tot:Object.values(need).reduce((a,b)=>a+b,0)}});
+ const near=k=>DEPOTS.map(d=>({d,c:(bestPath(d,k,e=>e.min)||[]).reduce((a,s)=>a+s.e.min,0)||Infinity})).sort((a,b)=>a.c-b.c||a.d.localeCompare(b.d))[0];
+ const order=Q?[...dests].sort((a,b)=>b.pr-a.pr||a.dl-b.dl||b.tot-a.tot):[...dests].sort((a,b)=>near(a.k).c-near(b.k).c||a.k.localeCompare(b.k));
+ order.forEach((d,i)=>{if(Q)log.push(`${N[d.k].n} is #${i+1}: ${PRN[d.pr]} priority, deadline ${d.dl} min.`)});
+ const del=[],left={};
+ order.forEach(d=>{const need={...d.need};let deps;
+  if(Q)deps=DEPOTS.map(x=>{const p=pick(x,d.k,0,d.dl,d.pr);return{x,T:p?p.pa.T:Infinity}}).filter(o=>isFinite(o.T)).sort((a,b)=>a.T-b.T||a.x.localeCompare(b.x)).map(o=>o.x);
+  else deps=[near(d.k).d];
+  deps.forEach((x,i)=>{const load={};let u=0;'fwm'.split('').forEach(r=>{const t=Math.min(need[r],stock[x][r]);load[r]=t;stock[x][r]-=t;need[r]-=t;u+=t});
+   if(u>0)del.push({k:d.k,dep:x,load,units:u});
+   if(Q&&u>0&&i>0)log.push(`${N[x].n} also supplies ${N[d.k].n} because the earlier depot did not have enough stock.`);
+   const short='fwm'.split('').filter(r=>load[r]<(d.need[r]-(i?0:0))&&need[r]>0);
+   if(Q&&short.length&&i===0&&deps.length>1)log.push(`${N[x].n} cannot cover all ${N[d.k].n} needs (short: ${short.map(r=>({f:'food',w:'water',m:'medical kits'}[r])).join(', ')}); the next depot will help.`);});
+  left[d.k]=Object.values(need).reduce((a,b)=>a+b,0);});
+ const nv={A:Math.max(1,Math.ceil(S.veh/2)),B:Math.max(1,Math.floor(S.veh/2))},free={A:Array(nv.A).fill(0),B:Array(nv.B).fill(0)};
+ del.forEach(d=>{const dd=dests.find(x=>x.k===d.k),fl=free[d.dep],vi=fl.indexOf(Math.min(...fl)),t0=fl[vi];d.t0=t0;let steps,pred;
+  if(Q){const p=pick(d.dep,d.k,t0,dd.dl,dd.pr);if(!p){d.arrive=Infinity;d.legs=[];d.pred=Infinity;log.push(`No open route from ${N[d.dep].n} to ${N[d.k].n}.`);return}
+   steps=p.pa.p;pred=t0+p.pa.T;d.path=steps;
+   const orig=bestPath(d.dep,d.k,e=>e.min);if(orig&&orig.some(s=>cond(s.e)==='blocked'))log.push(`The original route to ${N[d.k].n} became unavailable, so the system recalculated the delivery path.`);
+   if(p.pa.key!==p.sh.key)log.push(`${N[d.k].n}: chose ${[...new Set(steps.map(s=>ename(s.e)))].join('+')} (${p.pa.T.toFixed(1)} min) over the shorter ${[...new Set(p.sh.p.map(s=>ename(s.e)))].join('+')} (${p.sh.T.toFixed(1)} min): emergency corridor, deadline still met.`);
+   if(!p.feasible)log.push(`${N[d.k].n}: no route can meet the ${dd.dl} min deadline from ${N[d.dep].n}; using the fastest open route.`);}
+  else{steps=bestPath(d.dep,d.k,e=>e.min);pred=t0+steps.reduce((a,s)=>a+s.e.min,0);d.path=steps;}
+  const r=realize(steps,t0,d.k,!Q);d.legs=r.legs;d.arrive=r.arrive;d.pred=pred;d.rep=r.rep;
+  if(r.rep)log.push(`Baseline: a truck to ${N[d.k].n} hit a blocked road, waited 8 min and rerouted.`);
+  fl[vi]=isFinite(r.arrive)?r.arrive+(r.arrive-t0):Infinity;});
+ const total=dests.reduce((a,d)=>a+d.tot,0);
+ return{pol,del,dests,stock0,stock,left,log,total,order};}
+
+function metrics(R,t=Infinity){const D=R.del.filter(d=>isFinite(d.arrive)&&d.arrive<=t);
+ const served=D.reduce((a,d)=>a+d.units,0),crit=D.filter(d=>N[d.k].pr===3).reduce((a,d)=>a+d.units,0);
+ const critTot=R.dests.filter(d=>d.pr===3).reduce((a,d)=>a+d.tot,0);
+ const rem={};'fwm'.split('').forEach(r=>rem[r]=DEPOTS.reduce((a,x)=>a+R.stock0[x][r],0)-D.reduce((a,d)=>a+d.load[r],0));
+ const miss=R.dests.filter(d=>d.tot>0&&t>d.dl&&onTime(R,d.k,t)<d.tot).length;
+ return{total:R.total,served,crit,critTot,n:D.length,miss,avg:D.length?D.reduce((a,d)=>a+d.arrive,0)/D.length:0,rem,unserved:R.total-served};}
+const onTime=(R,k,t)=>R.del.filter(d=>d.k===k&&isFinite(d.arrive)&&d.arrive<=Math.min(t,N[k].dl)).reduce((a,d)=>a+d.units,0);
+const status=(R,k,t)=>{const d=R.dests.find(x=>x.k===k);return onTime(R,k,t)>=d.tot?'ok':t>d.dl?'bad':'pend'};
+
+/* ===================== MST (Kruskal) + DP (knapsack) ===================== */
+function mst(){const uf={};Object.keys(N).forEach(k=>uf[k]=k);const f=x=>uf[x]===x?x:(uf[x]=f(uf[x]));const out=[];
+ E.filter(e=>cond(e)!=='blocked').sort((a,b)=>a.km-b.km||a.id.localeCompare(b.id)).forEach(e=>{if(f(e.a)!==f(e.b)){uf[f(e.a)]=f(e.b);out.push(e)}});return out;}
+function knap(items,cap){const n=items.length,dp=Array.from({length:n+1},()=>Array(cap+1).fill(0));
+ for(let i=1;i<=n;i++)for(let w=0;w<=cap;w++){dp[i][w]=dp[i-1][w];const it=items[i-1];if(it.w<=w&&dp[i-1][w-it.w]+it.v>dp[i][w])dp[i][w]=dp[i-1][w-it.w]+it.v;}
+ const pick=[];let w=cap;for(let i=n;i>0;i--)if(dp[i][w]!==dp[i-1][w]){pick.push(items[i-1]);w-=items[i-1].w}return{best:dp[n][cap],pick};}
+
+/* ===================== RENDER ===================== */
+const mid=(a,b)=>[(N[a].x+N[b].x)/2,(N[a].y+N[b].y)/2];
+function mapSVG(R,t,o){let s=`<svg viewBox="0 0 760 460" role="img" aria-label="Road network map">`;const M=S.mst?new Set(mst().map(e=>e.id)):null;
+ E.forEach(e=>{const a=N[e.a],b=N[e.b],c=cond(e),[mx,my]=mid(e.a,e.b);
+  if(e.corr&&c!=='blocked')s+=`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#f5a524" stroke-width="10" opacity=".35" stroke-linecap="round"/>`;
+  s+=`<line class="e-${c}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke-width="3" stroke-linecap="round"/>`;
+  if(M&&M.has(e.id))s+=`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#333" stroke-width="2" stroke-dasharray="1 5" stroke-linecap="round"/>`;
+  s+=`<text x="${mx}" y="${my-5}" font-size="10" text-anchor="middle" opacity=".75">${e.km}km·${(+eT(e).toFixed(1))||'✕'}m</text>`;
+  if(c==='blocked')s+=`<text x="${mx}" y="${my+11}" font-size="14" text-anchor="middle">🚧</text>`;
+  s+=`<line data-e="${e.id}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="transparent" stroke-width="16" style="cursor:pointer"/>`;});
+ if(o.lab&&o.lab.sh){const pl=(i,col,w)=>{const pts=[i.p[0].from,...i.p.map(x=>x.to)].map(k=>N[k].x+','+N[k].y).join(' ');return`<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>`};
+  s+=pl(o.lab.sh,'#2b7de9',S.pol==='S'?9:5)+pl(o.lab.pa,'#8b3fd9',S.pol==='P'?9:5);}
+ if(R)R.del.forEach(d=>d.legs.forEach(l=>{if(l.t0>t||l.a===l.b)return;const q=Math.min(1,(t-l.t0)/(l.t1-l.t0)),a=N[l.a],b=N[l.b];
+  s+=`<line x1="${a.x}" y1="${a.y}" x2="${a.x+(b.x-a.x)*q}" y2="${a.y+(b.y-a.y)*q}" stroke="${R.pol==='R'?'#F47C5A':'#2b7de9'}" stroke-width="5" stroke-linecap="round"/>`}));
+ Object.keys(N).forEach(k=>{const n=N[k];
+  if(n.t==='j'){s+=`<circle data-n="${k}" cx="${n.x}" cy="${n.y}" r="7" fill="#b9a99e" style="cursor:pointer"/>`;return}
+  let fill='#fff',ring='#555';if(n.dem&&R){const st=status(R,k,t);ring=st==='ok'?'#2f9e44':st==='bad'?'#d64545':'#f2b705';fill=ring+'33'}
+  s+=`<g data-n="${k}" style="cursor:pointer"><circle cx="${n.x}" cy="${n.y}" r="22" fill="${n.dem?fill:'#FFE0D2'}" stroke="${n.dem?ring:'#1c4e9d'}" stroke-width="4"/><text x="${n.x}" y="${n.y+7}" font-size="20" text-anchor="middle">${ICON[n.t]}</text>
+  <text x="${n.x}" y="${n.y+39}" font-size="11" font-weight="700" text-anchor="middle">${n.n}</text>${n.dem?`<text x="${n.x}" y="${n.y+51}" font-size="10" text-anchor="middle" opacity=".8">${PRN[n.pr]} · ≤${n.dl}m</text>`:''}</g>`;});
+ if(R)R.del.forEach(d=>{const l=d.legs.find(l=>t>=l.t0&&t<l.t1);if(!l)return;const q=(t-l.t0)/(l.t1-l.t0),a=N[l.a],b=N[l.b];
+  s+=`<text x="${a.x+(b.x-a.x)*q}" y="${a.y+(b.y-a.y)*q+6}" font-size="20" text-anchor="middle">${l.a===l.b?'⏳':'🚚'}</text>`});
+ return s+'</svg>';}
+
+function panel(R,t,title){const m=metrics(R,t),pc=m.total?100*m.served/m.total:0;
+ return`<div class="card"><h3>${title}</h3><div class="bar"><i style="width:${pc}%"></i></div><div class="kpi">
+ <div><small>Total demand</small><strong>${m.total}</strong></div><div><small>Demand served</small><strong>${m.served} (${pc.toFixed(0)}%)</strong></div>
+ <div><small>Critical served</small><strong>${m.crit}/${m.critTot}</strong></div><div><small>Deliveries done</small><strong>${m.n}/${R.del.length}</strong></div>
+ <div><small>Deadline misses</small><strong>${m.miss}</strong></div><div><small>Avg delivery time</small><strong>${m.avg.toFixed(1)} min</strong></div>
+ <div><small>Remaining F/W/M</small><strong>${m.rem.f}/${m.rem.w}/${m.rem.m}</strong></div><div><small>Unserved</small><strong>${m.unserved}</strong></div></div></div>`;}
+
+function labCalc(){const k=S.to,d=N[k],p=pick(S.from,k,0,d.dl,d.pr);return p;}
+function drawLab(){const k=S.to,d=N[k],p=labCalc(),tb=$('labT');
+ if(!p){tb.innerHTML='<tr><td colspan="6">No open route.</td></tr>';$('labX').textContent='Every road to this destination is blocked.';return null}
+ const row=(nm,i,col,sel)=>`<tr style="${sel?'background:var(--soft)':''}"><td><b style="color:${col}">${nm}${sel?' ✔':''}</b></td><td>${[...new Set(i.p.map(s=>ename(s.e)))].join(' + ')}</td><td>${i.km} km</td><td>${i.T.toFixed(1)} min</td><td>${(100*i.c).toFixed(0)}%</td><td>${i.T.toFixed(1)} / ${d.dl} min ${i.T<=d.dl?'✓':'✗ late'}</td></tr>`;
+ tb.innerHTML=row('Shortest',p.sh,'var(--sh)',S.pol==='S')+row('Priority-aware',p.pa,'var(--pa)',S.pol==='P');
+ const blockedCorr=E.filter(e=>e.corr&&cond(e)==='blocked').map(ename),nm=i=>[...new Set(i.p.map(s=>ename(s.e)))].join(' + ');let x;
+ if(!p.feasible)x=`No route can meet the ${d.dl}-minute deadline, so the policy falls back to the fastest open route (${nm(p.sh)}) and flags the delivery as at risk.`;
+ else if(p.pa.key!==p.sh.key)x=`${nm(p.sh)} is shorter (${p.sh.T.toFixed(1)} min), but ${nm(p.pa)} is a critical emergency corridor. ${d.n} is ${PRN[d.pr].toLowerCase()} priority and the delivery still meets its ${d.dl}-minute deadline (${p.pa.T.toFixed(1)} min). The priority-aware policy therefore selects ${nm(p.pa)}.`;
+ else x=`Both policies pick ${nm(p.sh)}. ${p.pa.c>0?`${d.n} is ${PRN[d.pr].toLowerCase()} priority, but the corridor bonus is not large enough to beat the shorter road.`:'No emergency corridor is part of the best route, so the priority bonus does not change the choice.'}`;
+ if(blockedCorr.length)x+=` Blocked and excluded: ${[...new Set(blockedCorr)].join(', ')}.`;
+ $('labX').textContent=x;return p;}
+
+function drawDetail(){const s=S.sel,el=$('detail');if(!s){el.textContent='Nothing selected.';return}
+ if(s.t==='n'){const n=N[s.id];el.innerHTML=`<b>${ICON[n.t]} ${n.n}</b><br>`+(n.dem?`Priority: ${PRN[n.pr]}<br>Needs: food ${Math.round((n.dem.f||0)*S.dem/100)}, water ${Math.round((n.dem.w||0)*S.dem/100)}, medical kits ${Math.round((n.dem.m||0)*S.dem/100)}<br>Deadline: ${n.dl} min`:n.stock?`Stock: food ${Math.round(n.stock.f*S.f/100)}, water ${Math.round(n.stock.w*S.w/100)}, medical kits ${Math.round(n.stock.m*S.m/100)}`:'Road junction');return}
+ const e=E.find(x=>x.id===s.id);el.innerHTML=`<b>${ename(e)} (${e.a}–${e.b})</b><br>${e.km} km · ${e.min} min base · now ${isFinite(eT(e))?eT(e).toFixed(1)+' min':'impassable'}<br>Road priority: ${e.corr?'Critical Emergency Corridor':'Normal'} · Condition: <b>${cond(e)}</b><br><span class="row" style="margin-top:6px">${['open','congested','flooded','blocked'].map(c=>`<button data-set="${c}" data-id="${e.id}" class="${cond(e)===c?'on':''}">${c}</button>`).join('')}</span>`;}
+
+function drawAll(){const R=RES.R,B=RES.B,t=S.mode==='lab'?END:T;let h='';
+ if(S.mode==='cmp')h=`<div class="map"><b>Before: Traditional routing (shortest path, nearest depot)</b>${mapSVG(B,t,{})}</div><div class="map"><b>After: ResQRoute optimized response</b>${mapSVG(R,t,{})}</div>`;
+ else h=`<div class="map"><b>${S.mode==='lab'?'Route Lab (shortest vs priority-aware)':'ResQRoute simulation'} · clock ${Math.min(t,END).toFixed(1)} min</b>${mapSVG(S.mode==='lab'?null:R,t,{lab:S.mode==='lab'?LAB:null})}</div>`;
+ $('maps').innerHTML=h;
+ const mb=metrics(B,t),mr=metrics(R,t),d=(a,b,f=0)=>(a-b>0?'+':'')+(a-b).toFixed(f);
+ $('res').innerHTML=panel(B,t,'Before: Traditional routing')+panel(R,t,'After: ResQRoute')+`<div class="card"><h3>Difference (After − Before)</h3><p style="margin:0">Demand served <b>${d(mr.served,mb.served)}</b> units · critical served <b>${d(mr.crit,mb.crit)}</b> · deadline misses <b>${d(mr.miss,mb.miss)}</b> · avg delivery time <b>${d(mr.avg,mb.avg,1)} min</b> · unserved <b>${d(mr.unserved,mb.unserved)}</b></p><p class="note">Computed live from the two simulations at clock ${Math.min(t,END).toFixed(1)} min. Same map, stock, demand and random delays for both.</p></div>`;}
+
+/* ===================== STATE UPDATE ===================== */
+let LAB=null;
+function recalc(restart){reseed();RES={R:simulate('R'),B:simulate('B')};
+ const fin=[...RES.R.del,...RES.B.del].map(d=>d.arrive).filter(isFinite);END=Math.max(5,...fin)+1;
+ LAB=drawLab();drawDetail();
+ $('log').innerHTML=[...RES.R.log.map(x=>'After: '+x),...RES.B.log.map(x=>'Before: '+x)].map(x=>`<div>${x}</div>`).join('')||'<div>No decisions yet.</div>';
+ const ci=RES.R.dests.map(d=>({n:N[d.k].n,w:d.tot-(RES.R.left[d.k]||0),v:(d.tot-(RES.R.left[d.k]||0))*(d.pr+1)})).filter(i=>i.w>0),k=knap(ci,S.cap);
+ $('dp').innerHTML=`<p style="margin:0 0 6px">Capacity <b>${S.cap}</b> units. Value = units × (urgency + 1).</p><table><tr><th>Delivery</th><th>Units</th><th>Value</th><th>Chosen</th></tr>${ci.map(i=>`<tr><td>${i.n}</td><td>${i.w}</td><td>${i.v}</td><td>${k.pick.includes(i)?'✔':''}</td></tr>`).join('')}</table><p><b>DP result:</b> value ${k.best}, using ${k.pick.reduce((a,i)=>a+i.w,0)}/${S.cap} units.</p>`;
+ const m=mst();$('mstI').innerHTML=`<p style="margin:0 0 6px">${m.length} roads, total <b>${m.reduce((a,e)=>a+e.km,0)} km</b>: ${m.map(e=>e.id).join(', ')}</p>`;
+ if(S.mode==='lab'){T=END;play=false}else if(restart){T=0;play=true}
+ Object.keys(S).forEach(k=>{const o=$('o_'+k);if(o)o.textContent=k==='sig'?(S.sig<.15?'Low':S.sig<.35?'Medium':'High')+' ('+S.sig+')':S[k]});}
+function setMode(m){S.mode=m;['Lab','Sim','Cmp'].forEach(x=>$('m'+x).classList.toggle('on',x.toLowerCase()===m));if(m==='lab'){T=END;play=false}}
+function run(m){setMode(m);T=0;play=true;$('sim').scrollIntoView()}
+
+/* ===================== WIRING ===================== */
+$('goSim').onclick=()=>run('sim');$('goCmp').onclick=()=>run('cmp');$('bRun').onclick=()=>run('sim');$('bCmp').onclick=()=>run('cmp');
+$('mLab').onclick=()=>setMode('lab');$('mSim').onclick=()=>run('sim');$('mCmp').onclick=()=>run('cmp');
+$('bPause').onclick=()=>play=false;$('bResume').onclick=()=>{if(T<END)play=true};
+$('bReset').onclick=()=>{S={...DEF,manual:{}};document.querySelectorAll('[data-k]').forEach(i=>i.value=S[i.dataset.k]);$('preset').value=S.preset;$('mst').checked=false;$('lFrom').value='A';$('lTo').value='H';setMode('lab');recalc(false)};
+$('bGen').onclick=()=>{S.seed++;S.manual={};S.preset=['flood','quake','cyclone'][S.seed%3];S.clo=S.seed%3;$('preset').value=S.preset;document.querySelector('[data-k=clo]').value=S.clo;recalc(true);if(S.mode==='lab')setMode('sim');T=0;play=true};
+$('preset').onchange=e=>{S.preset=e.target.value;S.manual={};recalc(true)};
+$('mst').onchange=e=>S.mst=e.target.checked;
+document.querySelectorAll('[data-k]').forEach(i=>{i.value=S[i.dataset.k];i.oninput=()=>{S[i.dataset.k]=+i.value;recalc(true)}});
+$('lTo').innerHTML=DESTS.map(k=>`<option value="${k}">${N[k].n}</option>`).join('');$('lTo').value='H';
+$('lFrom').onchange=e=>{S.from=e.target.value;recalc(false)};$('lTo').onchange=e=>{S.to=e.target.value;recalc(false)};
+const polBtn=p=>{S.pol=p;$('lSh').classList.toggle('on',p==='S');$('lPa').classList.toggle('on',p==='P');recalc(false)};
+$('lSh').onclick=()=>polBtn('S');$('lPa').onclick=()=>polBtn('P');
+$('maps').onclick=ev=>{const n=ev.target.closest('[data-n]'),e=ev.target.closest('[data-e]');if(n)S.sel={t:'n',id:n.dataset.n};else if(e)S.sel={t:'e',id:e.dataset.e};drawDetail()};
+$('detail').onclick=ev=>{const b=ev.target.closest('[data-set]');if(!b)return;S.manual[b.dataset.id]=b.dataset.set;recalc(true)};
+$('explainBtn').onclick=()=>$('ex').showModal();
+
+/* hero: small animated network */
+(function(){let s='<svg viewBox="0 0 760 460" role="img" aria-label="Animated emergency road network">';
+ E.forEach(e=>{const a=N[e.a],b=N[e.b];s+=`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${e.corr?'#f5a524':'#cdbdb2'}" stroke-width="${e.corr?7:3}" stroke-linecap="round"/>`});
+ Object.keys(N).forEach(k=>{const n=N[k];if(n.t!=='j')s+=`<circle cx="${n.x}" cy="${n.y}" r="22" fill="#FFE0D2" stroke="#F47C5A" stroke-width="3"/><text x="${n.x}" y="${n.y+7}" font-size="20" text-anchor="middle">${ICON[n.t]}</text>`});
+ [['A','J1','H'],['B','J2','C'],['A','J2','S'],['B','V']].forEach((r,i)=>{const d='M'+r.map(k=>N[k].x+' '+N[k].y).join(' L');
+  s+=`<text font-size="22" text-anchor="middle" dy="7">🚚<animateMotion dur="${5+i}s" repeatCount="indefinite" path="${d}"/></text>`});
+ $('heroMap').innerHTML=s+'</svg>';
+ const dm=DESTS.reduce((a,k)=>a+Object.values(N[k].dem).reduce((x,y)=>x+y,0),0);
+ $('stats').innerHTML=[`${Object.keys(N).length} nodes`,`${E.length} roads`,'2 depots',`${DESTS.length} demand sites`,`${dm} units needed`].map(x=>`<span>${x}</span>`).join('');})();
+
+let last=0;function frame(ts){const dt=Math.min(.1,(ts-last)/1000);last=ts;if(play){T=Math.min(END,T+dt*2.5);if(T>=END)play=false}drawAll();requestAnimationFrame(frame)}
+recalc(false);requestAnimationFrame(frame);
+</script></body></html>
